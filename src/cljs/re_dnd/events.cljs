@@ -5,20 +5,19 @@
             [taoensso.timbre :as timbre
              :refer-macros (log  trace  debug  info  warn  error  fatal  report
                                  logf tracef debugf infof warnf errorf fatalf reportf
-                                 spy get-env log-env)]
-            [vimsical.re-frame.cofx.inject :as inject]))
+                                 spy get-env log-env)]))
 
 (defonce reg-event-listeners
   (memoize ; evaluate fn only once
-   (fn []
-     (.addEventListener js/document.body "mousemove" #(re-frame/dispatch [:dnd/mouse-moves
-                                                                          (+ (.-clientX %)
-                                                                             (.-scrollX js/window))
-                                                                          (+
-                                                                           (.-clientY %)
-                                                                           (.-scrollY js/window))]))
-     (.addEventListener js/document.body "mousedown" #(rf/dispatch [:dnd/set-mouse-button-status true]))
-     (.addEventListener js/document.body "mouseup" #(rf/dispatch [:dnd/set-mouse-button-status false])))))
+    (fn []
+      (.addEventListener js/document.body "mousemove" #(re-frame/dispatch [:dnd/mouse-moves
+                                                                           (+ (.-clientX %)
+                                                                              (.-scrollX js/window))
+                                                                           (+
+                                                                             (.-clientY %)
+                                                                             (.-scrollY js/window))]))
+      (.addEventListener js/document.body "mousedown" #(rf/dispatch [:dnd/set-mouse-button-status true]))
+      (.addEventListener js/document.body "mouseup" #(rf/dispatch [:dnd/set-mouse-button-status false])))))
 
 (defn flip-args
   [f x y]
@@ -270,46 +269,45 @@
 
 
 (re-frame/reg-event-fx
- :dnd/end-drag
- [(re-frame/inject-cofx ::inject/sub [:dnd/get-colliding-drop-zone-and-index])]
- (fn  [{db                    :db
-        drop-zones-being-hit? :dnd/get-colliding-drop-zone-and-index}
-       [_ source-draggable-id source-drop-zone-id]]
-   (debug drop-zones-being-hit?)
-   (let [disps (for [[drop-zone-id [[dropped-element-id index]]] drop-zones-being-hit?]
-                 (let [options                  (get-in db [:dnd/state :drop-zone-options drop-zone-id])
-                       _                        (debug options)
-                       drag-target-hit-dispatch (if (:drop-dispatch options)
-                                                  (into (:drop-dispatch options)
-                                                        [[source-drop-zone-id source-draggable-id]
-                                                         [drop-zone-id dropped-element-id index]])
-                                                  (do
-                                                    (warn "No options found for drop-zone-id: " drop-zone-id ", make sure it is properly initialized. Ignoring")
-                                                    nil))]
-                   drag-target-hit-dispatch))
-         disps (remove nil? disps)]
-     (debug "dispatches: " disps)
-     {:db         (set-all-draggables-to-idle db)
-      :dispatch-n (vec disps)})))
+  :dnd/end-drag
+  (fn  [{db :db} [_ source-draggable-id source-drop-zone-id]]
+    (let [drop-zones-being-hit? @(rf/subscribe [:dnd/get-colliding-drop-zone-and-index])
+          _                     (debug drop-zones-being-hit?)
+          disps
+          (for [[drop-zone-id [[dropped-element-id index]]] drop-zones-being-hit?]
+            (let [options                  (get-in db [:dnd/state :drop-zone-options drop-zone-id])
+                  _                        (debug options)
+                  drag-target-hit-dispatch (if (:drop-dispatch options)
+                                             (into (:drop-dispatch options)
+                                                   [[source-drop-zone-id source-draggable-id]
+                                                    [drop-zone-id dropped-element-id index]])
+                                             (do
+                                               (warn "No options found for drop-zone-id: " drop-zone-id ", make sure it is properly initialized. Ignoring")
+                                               nil))]
+              drag-target-hit-dispatch))
+          disps                 (remove nil? disps)]
+      (debug "dispatches: " disps)
+      {:db         (set-all-draggables-to-idle db)
+       :dispatch-n (vec disps)})))
 
 (re-frame/reg-event-db
- :dnd/reorder-drop
- (fn [db [_ drop-zone-id dropped-element-id]]
-   (let [drag-box    (bounding-rect (.getElementById js/document "drag-box"))
-         drop-zone   (bounding-rect (.getElementById js/document (str "drop-zone-" drop-zone-id)))]
-     (cond
-       (or
-        (nil? drop-zone)
-        (nil? drag-box))
-       (do
-         (debug "No dragbox / dropzone")
-         db)
+  :dnd/reorder-drop
+  (fn [db [_ drop-zone-id dropped-element-id]]
+    (let [drag-box  (bounding-rect (.getElementById js/document "drag-box"))
+          drop-zone (bounding-rect (.getElementById js/document (str "drop-zone-" drop-zone-id)))]
+      (cond
+        (or
+          (nil? drop-zone)
+          (nil? drag-box))
+        (do
+          (debug "No dragbox / dropzone")
+          db)
 
-       (collides? drag-box drop-zone)
-       (do (debug "Colliding!")
-           db) ;; TODO fix this
+        (collides? drag-box drop-zone)
+        (do (debug "Colliding!")
+            db) ;; TODO fix this
 
-       :otherwise ;;no-op
-       (do
-         (debug "No collide")
-         db)))))
+        :otherwise ;;no-op
+        (do
+          (debug "No collide")
+          db)))))

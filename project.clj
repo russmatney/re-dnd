@@ -1,4 +1,4 @@
-(defproject re-dnd "0.1.14"
+(defproject re-dnd "0.1.15"
 
   :description "A configurable drag/drop widget + API for re-frame apps"
   :url "https://github.com/Kah0ona/re-dnd.git"
@@ -8,7 +8,6 @@
                  [reagent "0.8.1"]
                  [re-frame "0.10.6"]
                  [com.taoensso/timbre "4.10.0"]
-                 [me.flowthing/re-frame-utils "0.1.1"]
                  [fipp "0.6.10"]]
 
 
@@ -25,11 +24,11 @@
   :repl-options {:timeout          220000
                  :nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
 
-   ;;figwheel-main, if you want to run it from the commandline
+  ;;figwheel-main, if you want to run it from the commandline
   :aliases {"fig"       ["trampoline" "run" "-m" "figwheel.main" "-b" "dev"]
             "build-dev" ["trampoline" "run" "-m" "figwheel.main" "-b" "dev" "-r"]}
 
-;;  :jar-exclusions   [#"(?:^|\/)re_dnd_demo\/" #"(?:^|\/)demo\/" #"(?:^|\/)compiled.*\/" #"html$"]
+  ;;  :jar-exclusions   [#"(?:^|\/)re_dnd_demo\/" #"(?:^|\/)demo\/" #"(?:^|\/)compiled.*\/" #"html$"]
 
   :profiles
   {:dev
